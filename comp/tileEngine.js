@@ -1,9 +1,4 @@
 
-var tile = function(data){
-	this.loc = data.loc || { x:0,y:0 },
-	this.size = data.size || { width:16, height:16 }
-};
-
 var tileSet = function(data){
 	this.imageID = data.imageID || "#";
 	this.tiles = data.tiles || [];
@@ -13,7 +8,7 @@ var tileSet = function(data){
 	this.tileHeight = data.tileHeight || 16;
 
 	this.drawTile = function(disp,index,pos){
-		disp.drawImage(this.image,this.tiles[index].loc.x, this.tiles[index].loc.y, this.tiles[index].size.width, this.tiles[index].size.height, pos.x, pos.y, this.tiles[index].size.width*this.scale, this.tiles[index].size.height*this.scale);
+		disp.drawImage(this.image,this.tiles[index].x, this.tiles[index].y, this.tileWidth, this.tileHeight, pos.x, pos.y, this.tileWidth*this.scale, this.tileHeight*this.scale);
 	}
 };
 
@@ -28,7 +23,35 @@ var gameMap = function(data){
 	this.scrollX = data.scrollX || 0;  //Amount to scroll in pixels
 	this.scrollY = data.scrollY || 0;
 
-	this.scroll= function(x,y){ this.scrollX+=x; this.scrollY+=y; }
+	this.scroll= function(x,y)
+		{ 
+			this.scrollX+=x; 
+			if(this.scrollX<0){ this.scrollX=0; }
+			this.scrollY+=y; 
+			if(this.scrollY<0){ this.scrollY=0; }
+		}
+
+	this.checkCol = function(BB){ //BB=== bounding box { x:/y:/width:/height:}
+		/*ctx.beginPath();
+		ctx.rect(BB.x,BB.y,BB.width,BB.height);
+		ctx.strokeStyle = "#F00";
+		ctx.stroke();
+		ctx.closePath(); */
+		var gridX = Math.floor(BB.x/(this.tileSet.tileWidth*this.tileSet.scale));
+		var gridY = Math.floor(BB.y/(this.tileSet.tileHeight*this.tileSet.scale));
+		var width = Math.floor((BB.x+BB.width)/(this.tileSet.tileWidth*this.tileSet.scale))-gridX+1;
+		var height = Math.floor((BB.y+BB.height)/(this.tileSet.tileHeight*this.tileSet.scale))-gridY+1;
+		for(var y=0;y<height && y+gridY<this.map.length; y++){
+			for(var x=0;x<width && x+gridX<this.map[0].length; x++){
+				if(this.tileSet.tiles[ this.map[y+gridY][x+gridX] ].solid ){ 
+					//console.log("HIT",this.map[y+gridY][x+gridX],x+gridX); 
+					return true; 
+				}
+			}
+		}
+
+		return false;
+	};
 
 	this.drawMap = function(disp,pos){
 		var startX = Math.floor(this.scrollX/(this.tileSet.tileWidth * this.tileSet.scale));
